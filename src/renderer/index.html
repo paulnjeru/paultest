@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IT Inventory Tracker</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>IT Inventory Tracker</h1>
+      <p>Track devices, assignments, and procurement ownership.</p>
+    </header>
+
+    <main>
+      <section class="panel">
+        <h2>Employees</h2>
+        <form id="employee-form" class="form-grid">
+          <input name="name" placeholder="Full name" required />
+          <input name="department" placeholder="Department" required />
+          <input name="email" placeholder="Email" required />
+          <button type="submit">Add Employee</button>
+        </form>
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Department</th>
+              <th>Email</th>
+            </tr>
+          </thead>
+          <tbody id="employees-body"></tbody>
+        </table>
+      </section>
+
+      <section class="panel">
+        <h2>Inventory Items</h2>
+        <form id="item-form" class="form-grid">
+          <input name="assetTag" placeholder="Asset tag" required />
+          <input name="name" placeholder="Item name" required />
+          <input name="category" placeholder="Category (Laptop, Monitor...)" required />
+          <input name="purchaseDate" type="date" required />
+          <select name="assignedTo" id="item-assignee">
+            <option value="">Unassigned</option>
+          </select>
+          <button type="submit">Add Item</button>
+        </form>
+
+        <h3>Assign Existing Item</h3>
+        <form id="assign-form" class="form-grid two-col">
+          <select id="assign-item" required></select>
+          <select id="assign-employee" required></select>
+          <button type="submit">Save Assignment</button>
+        </form>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Asset Tag</th>
+              <th>Item</th>
+              <th>Category</th>
+              <th>Status</th>
+              <th>Assigned To</th>
+            </tr>
+          </thead>
+          <tbody id="items-body"></tbody>
+        </table>
+      </section>
+
+      <section class="panel">
+        <h2>Purchase Orders</h2>
+        <form id="order-form" class="form-grid">
+          <input name="itemName" placeholder="Requested item" required />
+          <input name="quantity" type="number" min="1" placeholder="Quantity" required />
+          <input name="vendor" placeholder="Vendor" required />
+          <select name="requestedBy" id="order-requestor" required></select>
+          <select name="orderedBy" id="order-purchaser" required></select>
+          <select name="status" required>
+            <option>Requested</option>
+            <option>Placed</option>
+            <option>Delivered</option>
+            <option>Cancelled</option>
+          </select>
+          <input name="orderedDate" type="date" required />
+          <input name="notes" placeholder="Notes" />
+          <button type="submit">Add Order</button>
+        </form>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Qty</th>
+              <th>Vendor</th>
+              <th>Requested By</th>
+              <th>Ordered By</th>
+              <th>Status</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="orders-body"></tbody>
+        </table>
+      </section>
+    </main>
+
+    <script src="renderer.js"></script>
+  </body>
+</html>

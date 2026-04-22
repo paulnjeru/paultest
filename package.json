@@ -1,0 +1,36 @@
+{
+  "name": "it-inventory-tracker",
+  "version": "1.0.0",
+  "description": "Desktop IT inventory and ordering tracker",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack:win": "electron-builder --win portable"
+  },
+  "build": {
+    "appId": "com.company.itinventory",
+    "productName": "IT Inventory Tracker",
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "buildResources": "build"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "signAndEditExecutable": false
+    }
+  },
+  "devDependencies": {
+    "electron": "^37.2.0",
+    "electron-builder": "^25.1.8"
+  }
+}
