@@ -33,26 +33,28 @@ pip install -r requirements.txt
 python run.py
 ```
 
-## Build Windows EXE
-
-### Option A (simple)
-
-```bash
-pip install -r requirements.txt
-pyinstaller --noconfirm --windowed --onefile --name ITInventoryHub --add-data "assets;assets" run.py
-```
-
-### Option B (script on Windows)
-
-Run:
+## Build Windows EXE locally (on Windows)
 
 ```bat
 scripts\build_windows.bat
 ```
 
-Your executable will be generated at:
+Output:
 
-- `dist/ITInventoryHub.exe`
+- `dist\ITInventoryHub.exe`
+
+## Build + Download Windows EXE from GitHub Actions
+
+This repository includes a workflow at `.github/workflows/build-windows-exe.yml` that builds a Windows EXE on `windows-latest` and uploads it as an artifact.
+
+### Steps to get the downloadable EXE
+
+1. Push this branch to GitHub.
+2. Open **Actions** tab.
+3. Run **Build Windows EXE** (or use a push-triggered run).
+4. Open the completed run.
+5. Download artifact **ITInventoryHub-windows-exe**.
+6. Extract to get `ITInventoryHub.exe`.
 
 ## Data storage
 
