@@ -1,36 +1,60 @@
-# IT Inventory Tracker (Windows-ready)
+# IT Inventory & Procurement Hub (Python Desktop App)
 
-Simple Electron desktop app for IT teams to:
+A modern, Windows-friendly desktop app for IT teams to manage:
 
-- Track inventory assets.
-- Track who each asset is assigned to.
-- Track purchase requests and who placed each order.
+- **Inventory assets** (laptops, monitors, accessories, etc.)
+- **Asset assignment** (who currently has each item)
+- **Purchase workflow ownership** (who requested vs. who placed each order)
 
-## Features
+This version is built in **Python** (Tkinter + ttkbootstrap) so it is easy to package as a Windows `.exe` using **PyInstaller**.
 
-- Employee directory.
-- Inventory table with assignment status.
-- Re-assignment workflow for existing items.
-- Purchase order log with requestor and purchaser fields.
-- Local JSON persistence in Electron `userData` folder.
+## User-friendly GUI highlights
 
-## Run locally
+- Clean, modern theme with dashboard cards
+- Tabbed workflow: Dashboard, Inventory, Employees, Orders
+- Visual hero image section for a polished look
+- Fast local storage with SQLite (no server required)
+
+## Web graphics used
+
+The app downloads these public images on first run into `assets/`:
+
+1. Dell server image (Wikimedia Commons):
+   - https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/Dell_Servers.jpg/1280px-Dell_Servers.jpg
+2. Laptop and mouse image (Wikimedia Commons):
+   - https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Laptop_and_mouse.jpg/1280px-Laptop_and_mouse.jpg
+
+## Quick start
 
 ```bash
-npm install
-npm start
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+python run.py
 ```
 
-## Package for Windows
+## Build Windows EXE
 
-From any OS (cross-compile target configured):
+### Option A (simple)
 
 ```bash
-npm run pack:win
+pip install -r requirements.txt
+pyinstaller --noconfirm --windowed --onefile --name ITInventoryHub --add-data "assets;assets" run.py
 ```
 
-Output artifact is generated in `dist/` as a Windows portable executable.
+### Option B (script on Windows)
 
-## Data location
+Run:
 
-App data is saved as `inventory-data.json` in Electron's per-user app data folder.
+```bat
+scripts\build_windows.bat
+```
+
+Your executable will be generated at:
+
+- `dist/ITInventoryHub.exe`
+
+## Data storage
+
+- SQLite DB: `data/inventory.db`
+- Downloaded images: `assets/*.jpg`
