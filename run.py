@@ -1,5 +1,5 @@
-from app.main import InventoryApp
+from app.main import LoanPlatformApp
 
 if __name__ == "__main__":
-    app = InventoryApp()
+    app = LoanPlatformApp()
     app.mainloop()
