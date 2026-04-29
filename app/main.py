@@ -1,57 +1,23 @@
 from __future__ import annotations
 
-import tkinter as tk
 from datetime import date
-from pathlib import Path
 from tkinter import messagebox
-from urllib.request import urlretrieve
 
 import ttkbootstrap as ttk
-from PIL import Image, ImageTk
-from ttkbootstrap.constants import BOTH, LEFT, RIGHT, X
+from ttkbootstrap.constants import BOTH, LEFT, X
 
-from app.db import (
-    assign_item,
-    counts,
-    init_db,
-    insert_employee,
-    insert_item,
-    insert_order,
-    list_employees,
-    list_items,
-    list_orders,
-)
-
-ASSETS = {
-    "hero": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/Dell_Servers.jpg/1280px-Dell_Servers.jpg",
-    "inventory": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Laptop_and_mouse.jpg/1280px-Laptop_and_mouse.jpg",
-}
-ASSET_DIR = Path("assets")
+from app.db import counts, init_db, insert_client, insert_document, insert_loan, list_clients, list_documents, list_loans
 
 
-def ensure_assets():
-    ASSET_DIR.mkdir(exist_ok=True)
-    for name, url in ASSETS.items():
-        target = ASSET_DIR / f"{name}.jpg"
-        if not target.exists():
-            try:
-                urlretrieve(url, target)
-            except Exception:
-                continue
-
-
-class InventoryApp(ttk.Window):
+class LoanPlatformApp(ttk.Window):
     def __init__(self):
         super().__init__(themename="flatly")
-        self.title("IT Inventory & Procurement Hub")
+        self.title("SimplePay Capital - Loan Management & OCR Platform")
         self.geometry("1320x860")
         self.minsize(1180, 760)
 
         init_db()
-        ensure_assets()
-
-        self.employee_map: dict[str, int] = {}
-        self.item_map: dict[str, int] = {}
+        self.client_map: dict[str, int] = {}
 
         self._build_header()
         self._build_tabs()
@@ -60,35 +26,33 @@ class InventoryApp(ttk.Window):
     def _build_header(self):
         top = ttk.Frame(self, padding=16)
         top.pack(fill=X)
-
-        ttk.Label(top, text="IT Inventory & Procurement Hub", font=("Segoe UI", 22, "bold")).pack(side=LEFT)
-        ttk.Label(top, text="Track assets, assignees, and purchasing ownership.", bootstyle="secondary").pack(side=LEFT, padx=15)
+        ttk.Label(top, text="SimplePay Loan Management & OCR Platform", font=("Segoe UI", 22, "bold")).pack(side=LEFT)
+        ttk.Label(top, text="Kenya • Uganda • Tanzania", bootstyle="secondary").pack(side=LEFT, padx=15)
 
     def _build_tabs(self):
         tabs = ttk.Notebook(self)
         tabs.pack(fill=BOTH, expand=True, padx=16, pady=(0, 16))
 
         self.dashboard_tab = ttk.Frame(tabs)
-        self.inventory_tab = ttk.Frame(tabs)
-        self.employee_tab = ttk.Frame(tabs)
-        self.orders_tab = ttk.Frame(tabs)
+        self.clients_tab = ttk.Frame(tabs)
+        self.loans_tab = ttk.Frame(tabs)
+        self.docs_tab = ttk.Frame(tabs)
 
         tabs.add(self.dashboard_tab, text="Dashboard")
-        tabs.add(self.inventory_tab, text="Inventory")
-        tabs.add(self.employee_tab, text="Employees")
-        tabs.add(self.orders_tab, text="Orders")
+        tabs.add(self.clients_tab, text="Clients & KYC")
+        tabs.add(self.loans_tab, text="Loan Management")
+        tabs.add(self.docs_tab, text="Document OCR")
 
         self._build_dashboard()
-        self._build_employees()
-        self._build_inventory()
-        self._build_orders()
+        self._build_clients()
+        self._build_loans()
+        self._build_documents()
 
     def _build_dashboard(self):
         stats_row = ttk.Frame(self.dashboard_tab)
         stats_row.pack(fill=X, pady=10)
-
         self.stat_labels = {}
-        cards = [("employees", "Employees"), ("items", "Total Assets"), ("assigned", "Assigned Assets"), ("orders", "Purchase Orders")]
+        cards = [("clients", "Clients"), ("loans", "Total Loans"), ("active_loans", "Active Loans"), ("documents", "OCR Docs")]
         for key, title in cards:
             card = ttk.Labelframe(stats_row, text=title, bootstyle="info", padding=20)
             card.pack(side=LEFT, fill=X, expand=True, padx=6)
@@ -96,271 +60,152 @@ class InventoryApp(ttk.Window):
             lbl.pack()
             self.stat_labels[key] = lbl
 
-        hero_wrap = ttk.Frame(self.dashboard_tab)
-        hero_wrap.pack(fill=BOTH, expand=True, pady=10)
-        img_path = ASSET_DIR / "hero.jpg"
-        if img_path.exists():
-            image = Image.open(img_path).resize((1200, 440))
-            self.hero_photo = ImageTk.PhotoImage(image)
-            canvas = tk.Canvas(hero_wrap, height=440, highlightthickness=0)
-            canvas.pack(fill=BOTH, expand=True)
-            canvas.create_image(0, 0, anchor="nw", image=self.hero_photo)
-            canvas.create_rectangle(0, 0, 1200, 440, fill="#0d1b2a", stipple="gray50", outline="")
-            canvas.create_text(
-                34,
-                48,
-                anchor="nw",
-                fill="white",
-                width=700,
-                text="Centralize who owns each IT asset and who is accountable for each purchase order.",
-                font=("Segoe UI", 24, "bold"),
-            )
-            canvas.create_text(
-                34,
-                170,
-                anchor="nw",
-                fill="white",
-                width=660,
-                text="Use the tabs above to add staff, register laptops/monitors/peripherals, assign equipment, and track procurement workflows.",
-                font=("Segoe UI", 13),
-            )
-
-    def _build_employees(self):
-        form = ttk.Labelframe(self.employee_tab, text="Add Employee", padding=12)
+    def _build_clients(self):
+        form = ttk.Labelframe(self.clients_tab, text="Add Client", padding=12)
         form.pack(fill=X, pady=(10, 6))
-
-        self.emp_name = ttk.Entry(form)
-        self.emp_dept = ttk.Entry(form)
-        self.emp_email = ttk.Entry(form)
-        for i, (label, widget) in enumerate(
-            [("Name", self.emp_name), ("Department", self.emp_dept), ("Email", self.emp_email)]
-        ):
+        self.client_name = ttk.Entry(form)
+        self.client_country = ttk.Combobox(form, values=["Kenya", "Uganda", "Tanzania"], state="readonly")
+        self.client_phone = ttk.Entry(form)
+        self.client_national_id = ttk.Entry(form)
+        for i, (label, widget) in enumerate([
+            ("Full Name", self.client_name),
+            ("Country", self.client_country),
+            ("Phone", self.client_phone),
+            ("National ID", self.client_national_id),
+        ]):
             ttk.Label(form, text=label).grid(row=0, column=i, sticky="w", padx=4)
             widget.grid(row=1, column=i, sticky="ew", padx=4)
             form.grid_columnconfigure(i, weight=1)
+        ttk.Button(form, text="Save Client", bootstyle="success", command=self.add_client).grid(row=1, column=4, padx=8)
 
-        ttk.Button(form, text="Add Employee", bootstyle="success", command=self.add_employee).grid(row=1, column=3, padx=8)
+        cols = ("full_name", "country", "phone", "national_id")
+        self.client_tree = ttk.Treeview(self.clients_tab, columns=cols, show="headings", height=16, bootstyle="info")
+        for col, title in zip(cols, ["Name", "Country", "Phone", "National ID"]):
+            self.client_tree.heading(col, text=title)
+            self.client_tree.column(col, width=250)
+        self.client_tree.pack(fill=BOTH, expand=True, pady=6)
 
-        cols = ("name", "department", "email")
-        self.emp_tree = ttk.Treeview(self.employee_tab, columns=cols, show="headings", height=16, bootstyle="info")
-        for col, title in zip(cols, ["Name", "Department", "Email"]):
-            self.emp_tree.heading(col, text=title)
-            self.emp_tree.column(col, width=260)
-        self.emp_tree.pack(fill=BOTH, expand=True, pady=6)
-
-    def _build_inventory(self):
-        top = ttk.Labelframe(self.inventory_tab, text="Register Asset", padding=12)
-        top.pack(fill=X, pady=(10, 6))
-
-        self.item_asset = ttk.Entry(top)
-        self.item_name = ttk.Entry(top)
-        self.item_category = ttk.Entry(top)
-        self.item_date = ttk.Entry(top)
-        self.item_date.insert(0, str(date.today()))
-        self.item_assignee = ttk.Combobox(top, state="readonly")
-
-        labels = ["Asset Tag", "Item Name", "Category", "Purchase Date", "Assign To"]
-        widgets = [self.item_asset, self.item_name, self.item_category, self.item_date, self.item_assignee]
-        for i, (label, widget) in enumerate(zip(labels, widgets)):
-            ttk.Label(top, text=label).grid(row=0, column=i, sticky="w", padx=4)
-            widget.grid(row=1, column=i, sticky="ew", padx=4)
-            top.grid_columnconfigure(i, weight=1)
-
-        ttk.Button(top, text="Add Asset", bootstyle="success", command=self.add_item).grid(row=1, column=5, padx=8)
-
-        assign = ttk.Labelframe(self.inventory_tab, text="Assign Existing Asset", padding=12)
-        assign.pack(fill=X, pady=(0, 6))
-
-        self.assign_item_combo = ttk.Combobox(assign, state="readonly")
-        self.assign_employee_combo = ttk.Combobox(assign, state="readonly")
-        ttk.Label(assign, text="Asset").grid(row=0, column=0, sticky="w")
-        ttk.Label(assign, text="Employee").grid(row=0, column=1, sticky="w")
-        self.assign_item_combo.grid(row=1, column=0, sticky="ew", padx=4)
-        self.assign_employee_combo.grid(row=1, column=1, sticky="ew", padx=4)
-        assign.grid_columnconfigure(0, weight=1)
-        assign.grid_columnconfigure(1, weight=1)
-        ttk.Button(assign, text="Save Assignment", bootstyle="primary", command=self.save_assignment).grid(row=1, column=2, padx=8)
-
-        cols = ("asset_tag", "name", "category", "status", "assigned_name")
-        self.item_tree = ttk.Treeview(self.inventory_tab, columns=cols, show="headings", height=15, bootstyle="warning")
-        for col, title, width in [
-            ("asset_tag", "Asset Tag", 130),
-            ("name", "Item", 240),
-            ("category", "Category", 160),
-            ("status", "Status", 120),
-            ("assigned_name", "Assigned To", 220),
-        ]:
-            self.item_tree.heading(col, text=title)
-            self.item_tree.column(col, width=width)
-        self.item_tree.pack(fill=BOTH, expand=True, pady=6)
-
-    def _build_orders(self):
-        form = ttk.Labelframe(self.orders_tab, text="Create Purchase Order", padding=12)
+    def _build_loans(self):
+        form = ttk.Labelframe(self.loans_tab, text="Create Loan", padding=12)
         form.pack(fill=X, pady=(10, 6))
-
-        self.order_item = ttk.Entry(form)
-        self.order_qty = ttk.Spinbox(form, from_=1, to=999)
-        self.order_vendor = ttk.Entry(form)
-        self.order_requested = ttk.Combobox(form, state="readonly")
-        self.order_ordered = ttk.Combobox(form, state="readonly")
-        self.order_status = ttk.Combobox(form, state="readonly", values=["Requested", "Placed", "Delivered", "Cancelled"])
-        self.order_status.set("Requested")
-        self.order_date = ttk.Entry(form)
-        self.order_date.insert(0, str(date.today()))
-        self.order_notes = ttk.Entry(form)
-
-        labels = [
-            "Item",
-            "Qty",
-            "Vendor",
-            "Requested By",
-            "Ordered By",
-            "Status",
-            "Date",
-            "Notes",
-        ]
-        widgets = [
-            self.order_item,
-            self.order_qty,
-            self.order_vendor,
-            self.order_requested,
-            self.order_ordered,
-            self.order_status,
-            self.order_date,
-            self.order_notes,
-        ]
+        self.loan_client = ttk.Combobox(form, state="readonly")
+        self.loan_principal = ttk.Entry(form)
+        self.loan_currency = ttk.Combobox(form, values=["KES", "UGX", "TZS", "USD"], state="readonly")
+        self.loan_rate = ttk.Entry(form)
+        self.loan_term = ttk.Spinbox(form, from_=1, to=72)
+        self.loan_status = ttk.Combobox(form, values=["Pending", "Approved", "Disbursed", "Active", "Closed"], state="readonly")
+        self.loan_status.set("Pending")
+        self.loan_date = ttk.Entry(form)
+        self.loan_date.insert(0, str(date.today()))
+        widgets = [self.loan_client, self.loan_principal, self.loan_currency, self.loan_rate, self.loan_term, self.loan_status, self.loan_date]
+        labels = ["Client", "Principal", "Currency", "Interest %", "Term (months)", "Status", "Disbursed Date"]
         for i, (label, widget) in enumerate(zip(labels, widgets)):
             ttk.Label(form, text=label).grid(row=0, column=i, sticky="w", padx=3)
             widget.grid(row=1, column=i, sticky="ew", padx=3)
             form.grid_columnconfigure(i, weight=1)
+        ttk.Button(form, text="Save Loan", bootstyle="success", command=self.add_loan).grid(row=1, column=7, padx=8)
 
-        ttk.Button(form, text="Add Order", bootstyle="success", command=self.add_order).grid(row=1, column=8, padx=8)
-
-        cols = ("item_name", "quantity", "vendor", "requested_name", "ordered_name", "status", "ordered_date")
-        self.order_tree = ttk.Treeview(self.orders_tab, columns=cols, show="headings", height=16, bootstyle="success")
+        cols = ("id", "client_name", "country", "principal", "currency", "interest_rate", "term_months", "status", "outstanding_balance")
+        self.loan_tree = ttk.Treeview(self.loans_tab, columns=cols, show="headings", height=16, bootstyle="warning")
         for col, title, width in [
-            ("item_name", "Item", 220),
-            ("quantity", "Qty", 60),
-            ("vendor", "Vendor", 160),
-            ("requested_name", "Requested By", 170),
-            ("ordered_name", "Ordered By", 170),
-            ("status", "Status", 110),
-            ("ordered_date", "Date", 110),
+            ("id", "Loan #", 70), ("client_name", "Client", 200), ("country", "Country", 120), ("principal", "Principal", 120),
+            ("currency", "Currency", 80), ("interest_rate", "Rate%", 80), ("term_months", "Term", 80), ("status", "Status", 120), ("outstanding_balance", "Outstanding", 140)
         ]:
-            self.order_tree.heading(col, text=title)
-            self.order_tree.column(col, width=width)
-        self.order_tree.pack(fill=BOTH, expand=True, pady=6)
+            self.loan_tree.heading(col, text=title)
+            self.loan_tree.column(col, width=width)
+        self.loan_tree.pack(fill=BOTH, expand=True, pady=6)
 
-    def add_employee(self):
+    def _build_documents(self):
+        form = ttk.Labelframe(self.docs_tab, text="Upload Document Metadata + OCR Text", padding=12)
+        form.pack(fill=X, pady=(10, 6))
+        self.doc_client = ttk.Combobox(form, state="readonly")
+        self.doc_loan = ttk.Entry(form)
+        self.doc_type = ttk.Combobox(form, values=["Logbook", "Title Deed", "National ID", "Other"], state="readonly")
+        self.doc_number = ttk.Entry(form)
+        self.doc_file = ttk.Entry(form)
+        self.doc_ocr = ttk.Entry(form)
+        widgets = [self.doc_client, self.doc_loan, self.doc_type, self.doc_number, self.doc_file, self.doc_ocr]
+        labels = ["Client", "Loan # (optional)", "Doc Type", "Doc Number", "File Reference", "OCR Extract"]
+        for i, (label, widget) in enumerate(zip(labels, widgets)):
+            ttk.Label(form, text=label).grid(row=0, column=i, sticky="w", padx=3)
+            widget.grid(row=1, column=i, sticky="ew", padx=3)
+            form.grid_columnconfigure(i, weight=1)
+        ttk.Button(form, text="Save Document", bootstyle="success", command=self.add_document).grid(row=1, column=6, padx=8)
+
+        cols = ("client_name", "loan_id", "document_type", "document_number", "file_reference", "uploaded_on")
+        self.doc_tree = ttk.Treeview(self.docs_tab, columns=cols, show="headings", height=16, bootstyle="success")
+        for col, title, width in [
+            ("client_name", "Client", 200), ("loan_id", "Loan #", 80), ("document_type", "Type", 110),
+            ("document_number", "Document No.", 160), ("file_reference", "File Reference", 260), ("uploaded_on", "Uploaded", 110)
+        ]:
+            self.doc_tree.heading(col, text=title)
+            self.doc_tree.column(col, width=width)
+        self.doc_tree.pack(fill=BOTH, expand=True, pady=6)
+
+    def add_client(self):
         try:
-            insert_employee(self.emp_name.get(), self.emp_dept.get(), self.emp_email.get())
-            self.emp_name.delete(0, "end")
-            self.emp_dept.delete(0, "end")
-            self.emp_email.delete(0, "end")
+            insert_client(self.client_name.get(), self.client_country.get(), self.client_phone.get(), self.client_national_id.get())
+            self.client_name.delete(0, "end")
+            self.client_phone.delete(0, "end")
+            self.client_national_id.delete(0, "end")
+            self.client_country.set("")
             self.refresh_all()
         except Exception as exc:
-            messagebox.showerror("Could not add employee", str(exc))
+            messagebox.showerror("Could not add client", str(exc))
 
-    def add_item(self):
-        assignee = self.employee_map.get(self.item_assignee.get())
-        try:
-            insert_item(
-                self.item_asset.get(),
-                self.item_name.get(),
-                self.item_category.get(),
-                self.item_date.get(),
-                assignee,
-            )
-            self.item_asset.delete(0, "end")
-            self.item_name.delete(0, "end")
-            self.item_category.delete(0, "end")
-            self.item_date.delete(0, "end")
-            self.item_date.insert(0, str(date.today()))
-            self.item_assignee.set("")
-            self.refresh_all()
-        except Exception as exc:
-            messagebox.showerror("Could not add asset", str(exc))
-
-    def save_assignment(self):
-        item_id = self.item_map.get(self.assign_item_combo.get())
-        employee_id = self.employee_map.get(self.assign_employee_combo.get())
-        if not item_id or not employee_id:
-            messagebox.showwarning("Missing data", "Select both asset and employee.")
-            return
-        assign_item(item_id, employee_id)
-        self.refresh_all()
-
-    def add_order(self):
-        requested_by = self.employee_map.get(self.order_requested.get())
-        ordered_by = self.employee_map.get(self.order_ordered.get())
-        if not requested_by or not ordered_by:
-            messagebox.showwarning("Missing data", "Select requestor and purchaser.")
+    def add_loan(self):
+        client_id = self.client_map.get(self.loan_client.get())
+        if not client_id:
+            messagebox.showwarning("Missing data", "Select a client.")
             return
         try:
-            insert_order(
-                self.order_item.get(),
-                int(self.order_qty.get()),
-                self.order_vendor.get(),
-                requested_by,
-                ordered_by,
-                self.order_status.get(),
-                self.order_date.get(),
-                self.order_notes.get(),
-            )
-            self.order_item.delete(0, "end")
-            self.order_qty.delete(0, "end")
-            self.order_qty.insert(0, "1")
-            self.order_vendor.delete(0, "end")
-            self.order_status.set("Requested")
-            self.order_date.delete(0, "end")
-            self.order_date.insert(0, str(date.today()))
-            self.order_notes.delete(0, "end")
+            insert_loan(client_id, float(self.loan_principal.get()), self.loan_currency.get(), float(self.loan_rate.get()), int(self.loan_term.get()), self.loan_status.get(), self.loan_date.get())
+            self.loan_principal.delete(0, "end")
+            self.loan_rate.delete(0, "end")
+            self.loan_term.delete(0, "end")
+            self.loan_term.insert(0, "12")
             self.refresh_all()
         except Exception as exc:
-            messagebox.showerror("Could not add order", str(exc))
+            messagebox.showerror("Could not add loan", str(exc))
+
+    def add_document(self):
+        client_id = self.client_map.get(self.doc_client.get())
+        if not client_id:
+            messagebox.showwarning("Missing data", "Select a client.")
+            return
+        loan_raw = self.doc_loan.get().strip()
+        loan_id = int(loan_raw) if loan_raw else None
+        try:
+            insert_document(client_id, loan_id, self.doc_type.get(), self.doc_number.get(), self.doc_file.get(), self.doc_ocr.get(), str(date.today()))
+            self.doc_loan.delete(0, "end")
+            self.doc_number.delete(0, "end")
+            self.doc_file.delete(0, "end")
+            self.doc_ocr.delete(0, "end")
+            self.doc_type.set("")
+            self.refresh_all()
+        except Exception as exc:
+            messagebox.showerror("Could not add document", str(exc))
 
     def refresh_all(self):
-        people = list_employees()
-        items = list_items()
-        orders = list_orders()
+        clients = list_clients()
+        loans = list_loans()
+        docs = list_documents()
 
-        self.employee_map = {f"{row['name']} ({row['department']})": row["id"] for row in people}
-        self.item_map = {f"{row['asset_tag']} - {row['name']}": row["id"] for row in items}
+        self.client_map = {f"{row['full_name']} ({row['country']})": row["id"] for row in clients}
+        labels = list(self.client_map.keys())
+        self.loan_client["values"] = labels
+        self.doc_client["values"] = labels
 
-        people_labels = list(self.employee_map.keys())
-        self.item_assignee["values"] = [""] + people_labels
-        self.assign_employee_combo["values"] = people_labels
-        self.order_requested["values"] = people_labels
-        self.order_ordered["values"] = people_labels
-
-        self.assign_item_combo["values"] = list(self.item_map.keys())
-
-        for tree in [self.emp_tree, self.item_tree, self.order_tree]:
+        for tree in [self.client_tree, self.loan_tree, self.doc_tree]:
             for row in tree.get_children():
                 tree.delete(row)
 
-        for row in people:
-            self.emp_tree.insert("", "end", values=(row["name"], row["department"], row["email"]))
-
-        for row in items:
-            self.item_tree.insert(
-                "", "end", values=(row["asset_tag"], row["name"], row["category"], row["status"], row["assigned_name"] or "Unassigned")
-            )
-
-        for row in orders:
-            self.order_tree.insert(
-                "",
-                "end",
-                values=(
-                    row["item_name"],
-                    row["quantity"],
-                    row["vendor"],
-                    row["requested_name"],
-                    row["ordered_name"],
-                    row["status"],
-                    row["ordered_date"],
-                ),
-            )
+        for row in clients:
+            self.client_tree.insert("", "end", values=(row["full_name"], row["country"], row["phone"], row["national_id"]))
+        for row in loans:
+            self.loan_tree.insert("", "end", values=(row["id"], row["client_name"], row["country"], row["principal"], row["currency"], row["interest_rate"], row["term_months"], row["status"], row["outstanding_balance"]))
+        for row in docs:
+            self.doc_tree.insert("", "end", values=(row["client_name"], row["loan_id"] or "-", row["document_type"], row["document_number"], row["file_reference"], row["uploaded_on"]))
 
         stats = counts()
         for key, lbl in self.stat_labels.items():
@@ -368,5 +213,5 @@ class InventoryApp(ttk.Window):
 
 
 if __name__ == "__main__":
-    app = InventoryApp()
+    app = LoanPlatformApp()
     app.mainloop()
